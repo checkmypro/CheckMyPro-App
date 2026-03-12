@@ -1,0 +1,42 @@
+# CheckMyPro — Local development infrastructure
+# Run from project root: npm run infra:up
+# Or directly: docker compose -f infra/docker-compose.yml up -d
+#
+# Paths are relative to this file's location (infra/)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: checkmypro-db
+    environment:
+      POSTGRES_DB: checkmypro
+      POSTGRES_USER: checkmypro
+      POSTGRES_PASSWORD: checkmypro_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # schema.sql is at ../database/schema.sql relative to this file
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkmypro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: checkmypro-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
